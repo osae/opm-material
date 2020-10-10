@@ -287,11 +287,16 @@ protected:
                                      bool isGasPhase)
     {
         Evaluation Tcrit, pcrit, Vcrit;
+
+
+        const Evaluation& a = params.a(phaseIdx); // "attractive factor"
+        const Evaluation& b = params.b(phaseIdx); // "co-volume"
+
         findCriticalPoint_(Tcrit,
                            pcrit,
                            Vcrit,
-                           params.a(phaseIdx),
-                           params.b(phaseIdx));
+                           /*params.a(phaseIdx)*/ a,
+                           /*params.b(phaseIdx)*/ b);
 
 
         //Evaluation Vcrit = criticalMolarVolume_.eval(params.a(phaseIdx), params.b(phaseIdx));

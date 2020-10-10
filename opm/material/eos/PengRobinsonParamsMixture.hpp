@@ -140,7 +140,7 @@ public:
     {
         Scalar sumx = 0.0;
         for (unsigned compIdx = 0; compIdx < numComponents; ++compIdx)
-            sumx += fs.moleFraction(phaseIdx, compIdx);
+            sumx += Opm::decay<Scalar>(fs.moleFraction(phaseIdx, compIdx));
         sumx = std::max(Scalar(1e-10), sumx);
 
         // Calculate the Peng-Robinson parameters of the mixture
@@ -150,12 +150,12 @@ public:
         Scalar newA = 0;
         Scalar newB = 0;
         for (unsigned compIIdx = 0; compIIdx < numComponents; ++compIIdx) {
-            const Scalar moleFracI = fs.moleFraction(phaseIdx, compIIdx);
+            const Scalar moleFracI = Opm::decay<Scalar>(fs.moleFraction(phaseIdx, compIIdx));
             Scalar xi = Opm::max(0.0, Opm::min(1.0, moleFracI));
             Valgrind::CheckDefined(xi);
 
             for (unsigned compJIdx = 0; compJIdx < numComponents; ++compJIdx) {
-                const Scalar moleFracJ = fs.moleFraction(phaseIdx, compJIdx );
+                const Scalar moleFracJ = Opm::decay<Scalar>(fs.moleFraction(phaseIdx, compJIdx ));
                 Scalar xj = Opm::max(0.0, Opm::min(1.0, moleFracJ));
                 Valgrind::CheckDefined(xj);
 

@@ -37,6 +37,7 @@
 #include <opm/material/fluidsystems/TwoPhaseImmiscibleFluidSystem.hpp>
 #include <opm/material/fluidsystems/BlackOilFluidSystem.hpp>
 #include <opm/material/fluidsystems/BrineCO2FluidSystem.hpp>
+#include <opm/material/fluidsystems/DecaneCO2FluidSystem.hpp>
 #include <opm/material/fluidsystems/H2ON2FluidSystem.hpp>
 #include <opm/material/fluidsystems/H2ON2LiquidPhaseFluidSystem.hpp>
 #include <opm/material/fluidsystems/H2OAirFluidSystem.hpp>
@@ -243,6 +244,10 @@ void testAllFluidSystems()
 
     // Brine -- CO2
     {   typedef Opm::BrineCO2FluidSystem<Scalar, CO2Tables> FluidSystem;
+        checkFluidSystem<Scalar, FluidSystem, FluidStateEval, LhsEval>(); }
+
+    // Decane -- CO2
+    {   typedef Opm::DecaneCO2FluidSystem<Scalar> FluidSystem;
         checkFluidSystem<Scalar, FluidSystem, FluidStateEval, LhsEval>(); }
 
     // H2O -- N2
