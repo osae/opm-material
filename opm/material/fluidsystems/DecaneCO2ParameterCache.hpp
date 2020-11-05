@@ -51,6 +51,7 @@ class DecaneCO2ParameterCache
     typedef Opm::PengRobinson<Scalar> PengRobinson;
 
     enum { numPhases = FluidSystem::numPhases };
+    enum { numComponents = FluidSystem::numComponents };
 
     enum { waterPhaseIdx = FluidSystem::waterPhaseIdx };
     enum { oilPhaseIdx = FluidSystem::oilPhaseIdx };

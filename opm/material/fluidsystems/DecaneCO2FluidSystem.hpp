@@ -22,7 +22,7 @@
 */
 /*!
  * \file
- * \copydoc Opm::TwoPhaseImmiscibleFluidSystem
+ * \copydoc Opm::DecaneCO2FluidSystem
  */
 #ifndef DECANE_CO2_FLUIDSYSTEM_HH
 #define DECANE_CO2_FLUIDSYSTEM_HH
@@ -48,6 +48,7 @@
 #include <opm/material/eos/PengRobinsonParamsMixture.hpp>
 
 #include <opm/material/fluidsystems/DecaneCO2ParameterCache.hpp>
+#include <opm/material/fluidsystems/blackoilpvt/LBCviscosity.hpp>
 //#include "ChiParameterCache.hpp"
 
 #include <opm/material/common/Valgrind.hpp>
@@ -371,7 +372,7 @@ public:
             //#warning We use constant viscosity. These needs to be checked
             //#warning We use the same as for octane
             //std::cout << x << " " << LBC(fluidState,paramCache,phaseIdx) << std::endl;
-            return Opm::decay<LhsEval>(LBC(fluidState,paramCache,phaseIdx));
+            return Opm::decay<LhsEval>(Opm::LBCviscosity<Scalar, ThisType>::LBC(fluidState,paramCache,phaseIdx));
             //if(phaseIdx == oilPhaseIdx) {
             //    return 5e-4;
             //} else {
@@ -458,87 +459,8 @@ public:
         return 0;
     }
 
-    template <class FluidState, class LhsEval = typename FluidState::Scalar, class ParamCacheEval = LhsEval>
-    static LhsEval LBC(const FluidState& fluidState,
-                      const ParameterCache<ParamCacheEval>& /*paramCache*/,
-                      unsigned phaseIdx)
-    {
-        const Scalar MPa_atm = 0.101325;
-        const Scalar R = 8.3144598e-3;//Mj/kmol*K
-        const auto& T = Opm::decay<LhsEval>(fluidState.temperature(phaseIdx));
-        const auto& rho = Opm::decay<LhsEval>(fluidState.density(phaseIdx));
-
-        LhsEval sumMm = 0.0;
-        LhsEval sumVolume = 0.0;
-        for (unsigned compIdx = 0; compIdx < numComponents; ++compIdx) {
-            const Scalar& p_c = criticalPressure(compIdx)/1e6; // in Mpa;
-            const Scalar& T_c = criticalTemperature(compIdx);
-            const Scalar Mm = molarMass(compIdx) * 1000; //in kg/kmol;
-            const Scalar& rho_c = criticalDensity(compIdx);
-            const auto& x = Opm::decay<LhsEval>(fluidState.moleFraction(phaseIdx, compIdx));
-            const Scalar Z_c = p_c * Mm / (R *T_c*rho_c);
-            const Scalar v_c = R*Z_c*T_c/p_c; //v_c = Mm/rho_c
-            sumMm += x*Mm;
-            sumVolume += x*v_c;
-        }
-
-        LhsEval rho_pc = sumMm/sumVolume;
-        LhsEval rho_r = rho/rho_pc;
-
-
-        LhsEval xsum_T_c = 0.0;
-        LhsEval xsum_Mm = 0.0;
-        LhsEval xsum_p_ca = 0.0;
-        for (unsigned compIdx = 0; compIdx < numComponents; ++compIdx) {
-            const Scalar& p_c = criticalPressure(compIdx)/1e6; // in Mpa;
-            const Scalar& T_c = criticalTemperature(compIdx);
-            const Scalar Mm = molarMass(compIdx) * 1000; //in kg/kmol;
-            const auto& x = Opm::decay<LhsEval>(fluidState.moleFraction(phaseIdx, compIdx));
-            Scalar p_ca = p_c / MPa_atm;
-            xsum_T_c += x*T_c;
-            xsum_Mm += x*Mm;
-            xsum_p_ca += x*p_ca;
-        }
-        LhsEval zeta_tot = Opm::pow(xsum_T_c / (Opm::pow(xsum_Mm,3.0) * Opm::pow(xsum_p_ca,4.0)),1./6);
-
-        LhsEval my0 = 0.0;
-        LhsEval sumxrM = 0.0;
-        for (unsigned compIdx = 0; compIdx < numComponents; ++compIdx) {
-            const Scalar& p_c = criticalPressure(compIdx)/1e6; // in Mpa;
-            const Scalar& T_c = criticalTemperature(compIdx);
-            const Scalar Mm = molarMass(compIdx) * 1000; //in kg/kmol;
-            const auto& x = Opm::decay<LhsEval>(fluidState.moleFraction(phaseIdx, compIdx));
-            Scalar p_ca = p_c / MPa_atm;
-            Scalar zeta = std::pow(T_c / (std::pow(Mm,3.0) * std::pow(p_ca,4.0)),1./6);
-            LhsEval T_r = T/T_c;
-            LhsEval xrM = x * std::pow(Mm,0.5);
-            LhsEval mys = 0.0;
-            if (T_r <=1.5) {
-                mys = 34.0e-5*Opm::pow(T_r,0.94)/zeta;
-            } else {
-                mys = 17.78e-5*Opm::pow(4.58*T_r - 1.67, 0.625)/zeta;
-            }
-            my0 += xrM*mys;
-            sumxrM += xrM;
-        }
-        my0 /= sumxrM;
-
-        std::vector<Scalar> LBC = {0.10230,
-                                   0.023364,
-                                   0.058533,
-                                   -0.040758,  // trykkfeil i 1964-artikkel: -0.40758
-                                   0.0093324};
-
-        LhsEval sumLBC = 0.0;
-        for (int i = 0; i < 5; ++i) {
-            sumLBC += Opm::pow(rho_r,i)*LBC[i];
-        }
-
-        return (my0 + (Opm::pow(sumLBC,4.0) - 1e-4)/zeta_tot)/1e3; // mPas-> Pas
-    }
-
 };
 
-};//namespace opm
+}//namespace opm
 
 #endif // DECANE_CO2_FLUIDSYSTEM_HH
