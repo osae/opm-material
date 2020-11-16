@@ -53,15 +53,14 @@ class DecaneCO2ParameterCache
     enum { numPhases = FluidSystem::numPhases };
     enum { numComponents = FluidSystem::numComponents };
 
-    enum { waterPhaseIdx = FluidSystem::waterPhaseIdx };
     enum { oilPhaseIdx = FluidSystem::oilPhaseIdx };
     enum { gasPhaseIdx = FluidSystem::gasPhaseIdx };
 
 public:
     //! The cached parameters for the oil phase
-    typedef Opm::PengRobinsonParamsMixture<Scalar, FluidSystem, oilPhaseIdx, /*useDecaneCo2=*/true> OilPhaseParams;
+    typedef Opm::PengRobinsonParamsMixture<Scalar, FluidSystem, oilPhaseIdx> OilPhaseParams;
     //! The cached parameters for the gas phase
-    typedef Opm::PengRobinsonParamsMixture<Scalar, FluidSystem, gasPhaseIdx, /*useDecaneCo2=*/true> GasPhaseParams;
+    typedef Opm::PengRobinsonParamsMixture<Scalar, FluidSystem, gasPhaseIdx> GasPhaseParams;
 
     DecaneCO2ParameterCache()
     {
@@ -245,7 +244,6 @@ protected:
         {
         case oilPhaseIdx: oilPhaseParams_.updatePure(T, p); break;
         case gasPhaseIdx: gasPhaseParams_.updatePure(T, p); break;
-            //case waterPhaseIdx: waterPhaseParams_.updatePure(phaseIdx, temperature, pressure);break;
         }
     }
 
@@ -267,8 +265,6 @@ protected:
             break;
         case gasPhaseIdx:
             gasPhaseParams_.updateMix(fluidState);
-            break;
-        case waterPhaseIdx:
             break;
         }
     }
@@ -307,22 +303,6 @@ protected:
                                                  phaseIdx,
                                                  /*isGasPhase=*/false));
 
-            break;
-        }
-        case waterPhaseIdx: {
-            // Density of water in the stock tank (i.e. atmospheric
-            // pressure) is specified as 62.4 lb/ft^3 by the SPE-5
-            // paper. Also 1 lb = 0.4535923 and 1 ft = 0.3048 m.
-            const Scalar stockTankWaterDensity = 62.4 * 0.45359237 / 0.028316847;
-            // Water compressibility is specified as 3.3e-6 per psi
-            // overpressure, where 1 psi = 6894.7573 Pa
-            Scalar overPressure = Opm::decay<Scalar>(fluidState.pressure(waterPhaseIdx) - 1.013e5); // [Pa]
-            Scalar waterDensity =
-                stockTankWaterDensity * (1 + 3.3e-6*overPressure/6894.7573);
-
-            // convert water density [kg/m^3] to molar volume [m^3/mol]
-            Vm_[waterPhaseIdx] = Opm::decay<Scalar>(
-                                 fluidState.averageMolarMass(waterPhaseIdx)/waterDensity);
             break;
         };
         };

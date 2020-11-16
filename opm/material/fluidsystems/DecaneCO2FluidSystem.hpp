@@ -110,7 +110,7 @@ public:
  * \brief A two-phase fluid system with brine and decane as the main components
  * in each their phase, and CO2 as solvent in both.
  */
-template <class Scalar>
+template <class Scalar, bool useLBCmod =true >
 class DecaneCO2FluidSystem
         : public Opm::BaseFluidSystem<Scalar, DecaneCO2FluidSystem<Scalar> >
 {
@@ -137,7 +137,6 @@ public:
     //! Index of the liquid phase
     static const int oilPhaseIdx = 0;
     static const int gasPhaseIdx = 1;
-    static const int waterPhaseIdx = -17; //osae: hack for Spe5Cache ...
 
     //! \copydoc BaseFluidSystem::phaseName
     static const char* phaseName(unsigned phaseIdx)
@@ -372,7 +371,10 @@ public:
             //#warning We use constant viscosity. These needs to be checked
             //#warning We use the same as for octane
             //std::cout << x << " " << LBC(fluidState,paramCache,phaseIdx) << std::endl;
-            return Opm::decay<LhsEval>(Opm::LBCviscosity<Scalar, ThisType>::LBC(fluidState,paramCache,phaseIdx));
+            if (useLBCmod)
+                return Opm::decay<LhsEval>(Opm::LBCviscosity<Scalar, ThisType>::LBCmod(fluidState,paramCache,phaseIdx));
+            else
+                return Opm::decay<LhsEval>(Opm::LBCviscosity<Scalar, ThisType>::LBC(fluidState,paramCache,phaseIdx));
             //if(phaseIdx == oilPhaseIdx) {
             //    return 5e-4;
             //} else {
@@ -403,6 +405,16 @@ public:
             assert(0 <= phaseIdx && phaseIdx < numPhases);
             assert(0 <= compIdx && compIdx < numComponents);
 
+            if (phaseIdx == oilPhaseIdx || phaseIdx == gasPhaseIdx) {
+                return PengRobinsonMixture::computeFugacityCoefficient(fluidState,
+								                                       paramCache,
+								                                       phaseIdx,
+								                                       compIdx);
+            } else {
+                throw std::invalid_argument("expects oil or gas phase!");
+            }
+
+/*
             if (phaseIdx == oilPhaseIdx) {
 #if 1
 #warning HACK We use henry's law
@@ -426,6 +438,7 @@ public:
             } else {
                 throw std::invalid_argument("expects oil or gas phase!");
             }
+*/
         }
 
         //! \copydoc BaseFluidSystem::diffusionCoefficient
