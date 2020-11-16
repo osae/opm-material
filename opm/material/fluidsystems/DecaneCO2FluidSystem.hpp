@@ -368,18 +368,10 @@ public:
         {
             assert(0 <= phaseIdx && phaseIdx < numPhases);
 
-            //#warning We use constant viscosity. These needs to be checked
-            //#warning We use the same as for octane
-            //std::cout << x << " " << LBC(fluidState,paramCache,phaseIdx) << std::endl;
             if (useLBCmod)
                 return Opm::decay<LhsEval>(Opm::LBCviscosity<Scalar, ThisType>::LBCmod(fluidState,paramCache,phaseIdx));
             else
                 return Opm::decay<LhsEval>(Opm::LBCviscosity<Scalar, ThisType>::LBC(fluidState,paramCache,phaseIdx));
-            //if(phaseIdx == oilPhaseIdx) {
-            //    return 5e-4;
-            //} else {
-            //    return 1e-5;
-            //}
         }
 
         //! \copydoc BaseFluidSystem::enthalpy
@@ -388,9 +380,9 @@ public:
                                 const ParameterCache<ParamCacheEval>& /*paramCache*/,
                                 unsigned phaseIdx)
         {
-            const auto& T = Opm::decay<LhsEval>(fluidState.temperature(phaseIdx));
-            const auto& p = Opm::decay<LhsEval>(fluidState.pressure(phaseIdx));
-            const auto& x = Opm::decay<LhsEval>(fluidState.moleFraction(phaseIdx, CO2Idx));
+            //const auto& T = Opm::decay<LhsEval>(fluidState.temperature(phaseIdx));
+            //const auto& p = Opm::decay<LhsEval>(fluidState.pressure(phaseIdx));
+            //const auto& x = Opm::decay<LhsEval>(fluidState.moleFraction(phaseIdx, CO2Idx));
             throw std::runtime_error("We don't use the enthalpy for non-isothermal runs");
         }
 
@@ -398,7 +390,7 @@ public:
         //! \copydoc BaseFluidSystem::fugacityCoefficient
         template <class FluidState, class LhsEval = typename FluidState::Scalar, class ParamCacheEval = LhsEval>
         static LhsEval fugacityCoefficient(const FluidState& fluidState,
-                                       const ParameterCache<ParamCacheEval>& paramCache,
+                                           const ParameterCache<ParamCacheEval>& paramCache,
                                            unsigned phaseIdx,
                                            unsigned compIdx)
         {
@@ -406,10 +398,10 @@ public:
             assert(0 <= compIdx && compIdx < numComponents);
 
             if (phaseIdx == oilPhaseIdx || phaseIdx == gasPhaseIdx) {
-                return PengRobinsonMixture::computeFugacityCoefficient(fluidState,
-								                                       paramCache,
-								                                       phaseIdx,
-								                                       compIdx);
+                return Opm::decay<LhsEval>(PengRobinsonMixture::computeFugacityCoefficient(fluidState,
+                                                                                           paramCache,
+                                                                                           phaseIdx,
+                                                                                           compIdx));
             } else {
                 throw std::invalid_argument("expects oil or gas phase!");
             }

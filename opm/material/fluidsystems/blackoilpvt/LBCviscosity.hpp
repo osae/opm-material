@@ -168,10 +168,10 @@ public:
             }
         }
 
-        const Scalar& T_pc = xxT2_p/xxT_p; //mixture pseudocritical temperature
-        const Scalar& p_pc = T_pc/xxT_p;   //mixture pseudocritical pressure
+        const LhsEval T_pc = xxT2_p/xxT_p; //mixture pseudocritical temperature
+        const LhsEval p_pc = T_pc/xxT_p;   //mixture pseudocritical pressure
 
-        Scalar p_pca = p_pc / MPa_atm;
+        LhsEval p_pca = p_pc / MPa_atm;
         LhsEval zeta_tot = Opm::pow(T_pc / (Opm::pow(sumMm,3.0) * Opm::pow(p_pca,4.0)),1./6);
 
         LhsEval my0 = 0.0;
